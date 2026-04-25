@@ -24,6 +24,8 @@
 #include "disp_oled.h"
 #include "disp_lcd.h"
 
+#define DEFAULT_DispPage 2
+
 #ifdef WITH_U8G2_OLED
 const uint8_t DISP_Pages = 13;
 static uint8_t DISP_Page = DEFAULT_DispPage ; //Fab501 before 0
