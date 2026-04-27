@@ -117,7 +117,7 @@ static void wifi_app_event_handler_init(void)
 static void wifi_app_default_wifi_init(void)
 {
 	// Initialize the TCP stack
-	ESP_ERROR_CHECK(esp_netif_init());
+	//ESP_ERROR_CHECK(esp_netif_init());
 
 	// Default WiFi config - operations must be in this order!
 	wifi_init_config_t wifi_init_config = WIFI_INIT_CONFIG_DEFAULT();

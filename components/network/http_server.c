@@ -44,7 +44,10 @@ static QueueHandle_t http_server_monitor_queue_handle;
 static esp_err_t settings_net_post_handler(httpd_req_t *req); 
 static esp_err_t settings_net_get_handler(httpd_req_t *req);
 static esp_err_t settings_ip_get_handler(httpd_req_t *req);
-
+static esp_err_t settings_identity_get_handler(httpd_req_t *req);
+static esp_err_t settings_identity_post_handler(httpd_req_t *req);
+static esp_err_t log_book_get_handler(httpd_req_t *req);
+static esp_err_t radar_get_handler(httpd_req_t *req);
 
 // Embedded files: JQuery, index.html, app.css, app.js and favicon.ico files
 extern const uint8_t jquery_3_3_1_min_js_start[]	asm("_binary_jquery_3_3_1_min_js_start");
@@ -474,6 +477,38 @@ static httpd_handle_t http_server_configure(void)
 		};
 		httpd_register_uri_handler(http_server_handle, &ip_addr_get);
 		
+			httpd_uri_t identity_get = {
+				 .uri = "/api/config/identity",
+   				 .method = HTTP_GET,
+   				 .handler = settings_identity_get_handler,
+   				 .user_ctx = NULL
+   		};
+   		httpd_register_uri_handler(http_server_handle, &identity_get);
+   		
+		/*   	  httpd_uri_t identity_post = {
+				 .uri = "/api/config/identity",
+   				 .method = HTTP_POST,
+   				 .handler = settings_identity_post_handler,
+   				 .user_ctx = NULL
+   		};
+   		*/
+   		
+   		httpd_uri_t log_book_get = {
+				 .uri = "/api/logbook",
+   				 .method = HTTP_GET,
+   				 .handler = log_book_get_handler,
+   				 .user_ctx = NULL
+   		};
+   		httpd_register_uri_handler(http_server_handle, &log_book_get);
+   		
+   		httpd_uri_t radar_get = {
+				 .uri = "/api/radar",
+   				 .method = HTTP_GET,
+   				 .handler = radar_get_handler,
+   				 .user_ctx = NULL
+   		};
+		httpd_register_uri_handler(http_server_handle, &radar_get);
+		
 		return http_server_handle;
 	}
 
@@ -620,3 +655,122 @@ static esp_err_t settings_ip_get_handler(httpd_req_t *req){
     return ESP_OK;
 }
 
+static esp_err_t settings_identity_get_handler(httpd_req_t *req)
+{
+    char resp_str[384] = {0};
+
+	snprintf(resp_str, 2048,
+	"{"
+	  "\"pilot\":\"Wiktor\","
+	  "\"crew\":\"\","
+	  "\"reg\":\"SP-XDDD\","
+	  "\"base\":\"Babice Airport\","
+	  "\"manuf\":\"\","
+	  "\"model\":\"\","
+	  "\"type\":\"Glider\","
+	  "\"sn\":\"12345\""
+	"}"
+	);
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
+
+    return ESP_OK;
+}
+
+static esp_err_t log_book_get_handler(httpd_req_t *req)
+{
+    char *resp_str = malloc(2048);  
+
+    if (!resp_str) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    snprintf(resp_str, 2048,
+    "{"
+        "\"logbook\":["
+            "{"
+                "\"date\":\"2024-01-01\","
+                "\"duration\":\"2h\","
+                "\"aircraft\":\"Glider Junior\","
+                "\"remarks\":\"Nice flight!\""
+            "},"
+            "{"
+                "\"date\":\"2024-02-15\","
+                "\"duration\":\"1.5h\","
+                "\"aircraft\":\"Glider Junior\","
+                "\"remarks\":\"Challenging weather conditions.\""
+            "},"
+            "{"
+                "\"date\":\"2024-03-03\","
+                "\"duration\":\"2.3h\","
+                "\"aircraft\":\"DG-1000\","
+                "\"remarks\":\"Strong thermals, XC flight.\""
+            "},"
+            "{"
+                "\"date\":\"2024-03-10\","
+                "\"duration\":\"1.2h\","
+                "\"aircraft\":\"Cessna 172\","
+                "\"remarks\":\"Navigation training.\""
+            "},"
+            "{"
+                "\"date\":\"2024-03-18\","
+                "\"duration\":\"1.7h\","
+                "\"aircraft\":\"AT3\","
+                "\"remarks\":\"Touch & go practice.\""
+            "}"
+        "]"
+    "}");
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
+
+    free(resp_str);  
+
+    return ESP_OK;
+}
+
+static esp_err_t radar_get_handler(httpd_req_t *req)
+{
+    char *resp_str = malloc(1024);
+
+    if (!resp_str) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+
+    snprintf(resp_str, 1024,
+    "{"
+      "\"aircraft\":["
+        "{"
+          "\"id\":\"GLD1\","
+          "\"type\":\"Glider\","
+          "\"lat\":52.2690,"
+          "\"lon\":20.9070,"
+          "\"alt\":1200"
+        "},"
+        "{"
+          "\"id\":\"C172-1\","
+          "\"type\":\"Cessna 172\","
+          "\"lat\":52.2805,"
+          "\"lon\":20.9201,"
+          "\"alt\":1800"
+        "},"
+        "{"
+          "\"id\":\"AT3-7\","
+          "\"type\":\"AT3\","
+          "\"lat\":52.2750,"
+          "\"lon\":20.8950,"
+          "\"alt\":900"
+        "}"
+      "]"
+    "}");
+
+    httpd_resp_set_type(req, "application/json");
+    httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
+
+    free(resp_str);
+
+    return ESP_OK;
+}

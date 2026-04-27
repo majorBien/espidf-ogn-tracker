@@ -1,17 +1,21 @@
 <!DOCTYPE html>
-<html lang="pl">
+<html lang="en">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Ankior Smart Apteczka Basic</title>
+  <title>Ankior Smart First Aid Kit Basic</title>
   <link rel="stylesheet" href="app.css">
 </head>
 <body>
   <header>
-    <h1>Panel sterowania</h1>
+    <h1>Control Panel</h1>
     <nav class="tabs">
       <button class="tab-btn" data-tab="ota">📦 OTA</button>
-      <button class="tab-btn" data-tab="network">📶 Sieć</button>
+      <button class="tab-btn" data-tab="network">📶 Network</button>
+      <button class="tab-btn" data-tab="radar">🛰️ Radar</button>
+      <button class="tab-btn" data-tab="logbook">📖 Log Book</button>
+      <button class="tab-btn" data-tab="identity">🆔 Identity</button>
+	  
     </nav>
   </header>
 
@@ -19,12 +23,12 @@
 
     <!-- OTA UPDATE -->
     <section id="ota" class="tab">
-      <h2>Aktualizacja OTA</h2>
+      <h2>OTA Update</h2>
       <div class="ota-section">
         <input type="file" id="selected_file">
-        <button id="btnUpdate">Aktualizuj oprogramowanie</button>
-		<br>
-		<progress id="ota_progress" value="0" max="100" style="width: 100%; display:none;"></progress>
+        <button id="btnUpdate">Update Firmware</button>
+        <br>
+        <progress id="ota_progress" value="0" max="100" style="width: 100%; display:none;"></progress>
         <div id="file_info"></div>
         <div id="ota_update_status"></div>
       </div>
@@ -32,20 +36,85 @@
 
     <!-- NETWORK CONFIG -->
     <section id="network" class="tab">
-      <h2>Konfiguracja Wi-Fi</h2>
+      <h2>Wi-Fi Configuration</h2>
       <div class="network-section">
-        <button id="btnGetNetwork">📥 Pobierz konfigurację</button>
+        <button id="btnGetNetwork">📥 Load Configuration</button>
         <div id="network_status"></div>
 
         <label for="ssid">SSID:</label>
-        <input type="text" id="ssid" placeholder="Nazwa sieci Wi-Fi">
+        <input type="text" id="ssid" placeholder="Wi-Fi Network Name">
 
-        <label for="password">Hasło:</label>
-        <input type="password" id="password" placeholder="Hasło Wi-Fi">
+        <label for="password">Password:</label>
+        <input type="password" id="password" placeholder="Wi-Fi Password">
 
-        <button id="btnSaveNetwork">💾 Zapisz konfigurację</button>
+        <button id="btnSaveNetwork">💾 Save Configuration</button>
       </div>
     </section>
+
+    <!-- RADAR -->
+    <section id="radar" class="tab">
+      <h2>Radar</h2>
+      <div class="radar-section">
+        <p>Nearby aircraft will be displayed here.</p>
+        <div id="radar_display"></div>
+      </div>
+    </section>
+
+    <!-- LOG BOOK -->
+    <section id="logbook" class="tab">
+      <h2>Log Book</h2>
+      <div class="logbook-section">
+        <p>Flight history and recorded events.</p>
+        <div id="logbook_entries"></div>
+      </div>
+    </section>
+
+	<!-- IDENTITY CONFIG -->
+	<section id="identity" class="tab">
+	  <h2>Aircraft Identity</h2>
+
+	  <div class="identity-grid">
+
+	    <!-- CREW CARD -->
+	    <div class="identity-card">
+	      <h3>👨‍✈️ Crew</h3>
+
+	      <label for="pilot">Pilot:</label>
+	      <input type="text" id="pilot" placeholder="Pilot name">
+
+	      <label for="crew">Crew:</label>
+	      <input type="text" id="crew" placeholder="Crew member (optional)">
+
+	      <label for="reg">Registration:</label>
+	      <input type="text" id="reg" placeholder="e.g. SP-ABC">
+
+	      <label for="base">Base:</label>
+	      <input type="text" id="base" placeholder="Home airfield">
+	    </div>
+
+	    <!-- AIRCRAFT CARD -->
+	    <div class="identity-card">
+	      <h3>🛩 Aircraft</h3>
+
+	      <label for="manuf">Manufacturer:</label>
+	      <input type="text" id="manuf" placeholder="e.g. Schleicher">
+
+	      <label for="model">Model:</label>
+	      <input type="text" id="model" placeholder="e.g. ASK-21">
+
+	      <label for="type">Type:</label>
+	      <input type="text" id="type" placeholder="Glider / Towplane">
+
+	      <label for="sn">Serial Number:</label>
+	      <input type="text" id="sn" placeholder="SN">
+	    </div>
+
+	  </div>
+
+	  <button id="btnSaveIdentity">💾 Save Identity</button>
+	  <div id="identity_status"></div>
+	</section>
+
   </main>
 
   <script src="app.js" type="module"></script>

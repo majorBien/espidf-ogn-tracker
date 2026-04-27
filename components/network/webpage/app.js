@@ -1,4 +1,4 @@
-let API_URL = "http://192.168.0.1"; // AP adress
+let API_URL = "http://192.168.0.1"; // AP address
 
 
 // OTA elements
@@ -22,10 +22,10 @@ function updateProgress(event) {
     otaProgress.style.display = "block";
     otaProgress.value = percent;
 
-    otaStatus.textContent = `Wysyłanie pliku... ${percent}%`;
+    otaStatus.textContent = `Uploading file... ${percent}%`;
 
     if (percent === 100) {
-      otaStatus.textContent = "Upload zakończony. Trwa weryfikacja...";
+      otaStatus.textContent = "Upload complete. Verifying...";
     }
 
     getUpdateStatus();
@@ -36,40 +36,62 @@ function updateProgress(event) {
 // ===== TABS =====
 document.querySelectorAll(".tab-btn").forEach(btn => {
   btn.addEventListener("click", () => {
+    const tabId = btn.dataset.tab;
+
     document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
     document.querySelectorAll(".tab-btn").forEach(b => b.classList.remove("active"));
-    document.getElementById(btn.dataset.tab).classList.add("active");
+
+    document.getElementById(tabId).classList.add("active");
     btn.classList.add("active");
+
+    if (tabId === "logbook") {
+      loadLogBook();
+    }
+
+	if (tabId === "identity") {
+	  loadIdentity();
+
+	  // force default subtab
+	  document.querySelectorAll(".subtab").forEach(t => t.classList.remove("active"));
+	  document.querySelectorAll(".subtab-btn").forEach(b => b.classList.remove("active"));
+
+	  document.querySelector('[data-subtab="crew"]')?.classList.add("active");
+	  document.getElementById("crew-tab")?.classList.add("active");
+	}
   });
 });
 
-
 // ===== OTA UPDATE =====
-let seconds=null, otaTimerVar=null;
+let seconds = null, otaTimerVar = null;
 
 fileInput.addEventListener("change", () => {
-  if(fileInput.files.length>0){
+  if (fileInput.files.length > 0) {
     const file = fileInput.files[0];
-    fileInfo.innerHTML = `<h4>Plik: ${file.name}<br>Rozmiar: ${file.size} bajtów</h4>`;
+    fileInfo.innerHTML = `<h4>File: ${file.name}<br>Size: ${file.size} bytes</h4>`;
   }
 });
 
-btnUpdate.addEventListener("click", ()=>{
-  if(fileInput.files.length===0){ alert("Wybierz plik najpierw"); return; }
+btnUpdate.addEventListener("click", () => {
+  if (fileInput.files.length === 0) { 
+    alert("Select a file first"); 
+    return; 
+  }
+
   const file = fileInput.files[0];
   const formData = new FormData();
   formData.set("file", file, file.name);
 
   otaStatus.textContent = `Uploading ${file.name}, Firmware Update in Progress...`;
+
   const xhr = new XMLHttpRequest();
   xhr.upload.addEventListener("progress", updateProgress);
   xhr.open("POST", `${API_URL}/api/OTA/update`);
-  xhr.responseType="blob";
+  xhr.responseType = "blob";
   xhr.send(formData);
 });
 
 
-function getUpdateStatus(){
+function getUpdateStatus() {
   const xhr = new XMLHttpRequest();
   xhr.open("POST", `${API_URL}/api/OTA/status`);
 
@@ -91,45 +113,62 @@ function getUpdateStatus(){
 }
 
 
-function otaRebootTimer(){
+function otaRebootTimer() {
   otaProgress.style.display = "none"; 
-  otaStatus.textContent=`OTA Firmware Update Complete. Rebooting in: ${seconds}`;
-  if(--seconds===0){ clearTimeout(otaTimerVar); window.location.reload(); }
-  else{ otaTimerVar=setTimeout(otaRebootTimer,1000); }
+  otaStatus.textContent = `OTA Firmware Update Complete. Rebooting in: ${seconds}`;
+  
+  if (--seconds === 0) { 
+    clearTimeout(otaTimerVar); 
+    window.location.reload(); 
+  }
+  else { 
+    otaTimerVar = setTimeout(otaRebootTimer, 1000); 
+  }
 }
+
 
 // ===== NETWORK CONFIG =====
 const staIpContainer = document.createElement("div"); // container for STA IP
 staIpContainer.id = "sta-ip-container";
-staIpContainer.style.marginBottom = "10px"; // optional styling
+staIpContainer.style.marginBottom = "10px";
+
 const networkSection = document.querySelector(".network-section");
-networkSection.prepend(staIpContainer); // add at the top
+networkSection.prepend(staIpContainer);
 
 
 btnGetNetwork.addEventListener("click", async () => {
-  try{
+  try {
     const res = await fetch(`${API_URL}/api/config/network`);
-    if(res.ok){
+    if (res.ok) {
       const data = await res.json();
-      ssidInput.value=data.ssid||"";
-      passwordInput.value=data.password||"";
-      networkStatus.textContent="Dane pobrane ✅";
+      ssidInput.value = data.ssid || "";
+      passwordInput.value = data.password || "";
+      networkStatus.textContent = "Data loaded ✅";
     }
-  } catch(e){ networkStatus.textContent="Błąd pobrania ❌"; console.error(e); }
+  } catch (e) { 
+    networkStatus.textContent = "Load error ❌"; 
+    console.error(e); 
+  }
 });
 
-btnSaveNetwork.addEventListener("click", async ()=>{
+btnSaveNetwork.addEventListener("click", async () => {
   const ssid = ssidInput.value;
   const password = passwordInput.value;
-  try{
+
+  try {
     const res = await fetch(`${API_URL}/api/config/network`, {
-      method:"POST",
-      headers:{ "Content-Type":"application/json" },
-      body: JSON.stringify({ssid,password})
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ ssid, password })
     });
-    if(res.ok) networkStatus.textContent="Zapisano ✅";
-    else networkStatus.textContent="Błąd zapisu ❌";
-  } catch(e){ networkStatus.textContent="Błąd zapisu ❌"; console.error(e); }
+
+    if (res.ok) networkStatus.textContent = "Saved ✅";
+    else networkStatus.textContent = "Save error ❌";
+
+  } catch (e) { 
+    networkStatus.textContent = "Save error ❌"; 
+    console.error(e); 
+  }
 });
 
 
@@ -162,15 +201,17 @@ async function updateStaIpLink() {
 // Run on startup
 updateStaIpLink();
 
+
 // ===== IMPROVED & MORE STABLE FAST STA DISCOVERY =====
 async function discoverStaApiUrl() {
   const subnets = [
     { base: "192.168.0.", start: 1, end: 200 },
     { base: "172.20.10.", start: 2, end: 14 }
   ];
-  const timeout = 600;       
-  const batchSize = 50;       
-  const retryDelay = 300;     
+
+  const timeout = 600;
+  const batchSize = 50;
+  const retryDelay = 300;
 
   console.log("Starting IMPROVED FAST STA discovery...");
 
@@ -192,6 +233,7 @@ async function discoverStaApiUrl() {
         }
       }
     } catch (e) {}
+
     return null;
   }
 
@@ -213,7 +255,7 @@ async function discoverStaApiUrl() {
         if (hit) {
           console.log("FOUND STA device at:", hit);
           API_URL = `http://${hit}`;
-          return hit;    // END – device found
+          return hit;
         }
       }
     }
@@ -223,7 +265,85 @@ async function discoverStaApiUrl() {
   }
 }
 
-
 // run at startup
 discoverStaApiUrl();
 
+// ===== DEFAULT TAB (Identity) =====
+window.addEventListener("DOMContentLoaded", () => {
+  const defaultTab = document.querySelector('[data-tab="identity"]');
+  const defaultSection = document.getElementById("identity");
+
+  document.querySelectorAll(".tab").forEach(tab => tab.classList.remove("active"));
+  document.querySelectorAll(".tab-btn").forEach(btn => btn.classList.remove("active"));
+
+  if (defaultTab && defaultSection) {
+    defaultTab.classList.add("active");
+    defaultSection.classList.add("active");
+  }
+});
+
+async function loadIdentity() {
+  try {
+    const res = await fetch(`${API_URL}/api/config/identity`);
+    if (!res.ok) return;
+
+    const data = await res.json();
+
+    // CREW
+    document.getElementById("pilot").value = data.pilot || "";
+    document.getElementById("crew").value = data.crew || "";
+    document.getElementById("reg").value = data.reg || "";
+    document.getElementById("base").value = data.base || "";
+
+    // PLANE
+    document.getElementById("manuf").value = data.manuf || "";
+    document.getElementById("model").value = data.model || "";
+    document.getElementById("type").value = data.type || "";
+    document.getElementById("sn").value = data.sn || "";
+
+  } catch (e) {
+    console.error("Identity load failed", e);
+  }
+}
+async function loadLogBook() {
+  const container = document.getElementById("logbook_entries");
+  container.innerHTML = "Loading logbook...";
+
+  try {
+    const res = await fetch(`${API_URL}/api/logbook`);
+    if (!res.ok) {
+      container.innerHTML = "Failed to load logbook";
+      return;
+    }
+
+    const data = await res.json();
+
+    if (!data.logbook || data.logbook.length === 0) {
+      container.innerHTML = "No flights recorded";
+      return;
+    }
+
+    container.innerHTML = "";
+
+    data.logbook.forEach((flight) => {
+      const entry = document.createElement("div");
+      entry.className = "log-entry";
+
+      entry.innerHTML = `
+        <div class="log-row">
+          <span class="log-date">📅 ${flight.date}</span>
+          <span class="log-duration">⏱ ${flight.duration}</span>
+        </div>
+
+        <div class="log-aircraft">🛩 ${flight.aircraft}</div>
+        <div class="log-remarks">"${flight.remarks}"</div>
+      `;
+
+      container.appendChild(entry);
+    });
+
+  } catch (e) {
+    console.error(e);
+    container.innerHTML = "Error loading logbook";
+  }
+}

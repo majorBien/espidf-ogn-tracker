@@ -105,6 +105,7 @@ void app_main(void)
 #endif
 
     CONS_UART_SetBaudrate(Parameters.CONbaud);
+    ESP_ERROR_CHECK(esp_netif_init());
 	wifi_app_start();  
 #ifdef WITH_LORAWAN
 #ifdef DEBUG_PRINT
