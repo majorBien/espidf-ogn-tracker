@@ -270,3 +270,9 @@ button:active {
   margin-top: 0;
   margin-bottom: 10px;
 }
+
+#radar_display {
+  height: 500px;
+  width: 100%;
+  border-radius: 12px;
+}

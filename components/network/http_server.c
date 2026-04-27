@@ -21,7 +21,7 @@
 #include "esp_timer.h"
 #include "esp_ota_ops.h" 
 #include "esp_partition.h" 
-
+#include <math.h>
 nvs_network_data_t network_data;
 
 // Firmware update status
@@ -663,12 +663,12 @@ static esp_err_t settings_identity_get_handler(httpd_req_t *req)
 	"{"
 	  "\"pilot\":\"Wiktor\","
 	  "\"crew\":\"\","
-	  "\"reg\":\"SP-XDDD\","
-	  "\"base\":\"Babice Airport\","
-	  "\"manuf\":\"\","
-	  "\"model\":\"\","
+	  "\"reg\":\"SP-3321\","
+	  "\"base\":\"Aeroklub Warszawski - Babice\","
+	  "\"manuf\":\"Schempp-Hirth\","
+	  "\"model\":\"Discus 2\","
 	  "\"type\":\"Glider\","
-	  "\"sn\":\"12345\""
+	  "\"sn\":\"DH-18-2045\""
 	"}"
 	);
 
@@ -730,47 +730,105 @@ static esp_err_t log_book_get_handler(httpd_req_t *req)
 
     return ESP_OK;
 }
+static float own_lat = 52.2730;
+static float own_lon = 20.9100;
+static float own_alt = 1100;
+static float own_heading = 90.0f; // z magnetometru (mock)
 
+typedef struct {
+    const char *id;
+    const char *type;
+    float lat;
+    float lon;
+    float alt;
+    float dx;
+    float dy;
+} aircraft_t;
+
+// ===== MOCK AIRCRAFT STATE =====
+static aircraft_t fleet[] = {
+    {"GLD1",   "Glider",     52.2690, 20.9070, 1200,  0.00001,  0.00000},
+    {"C172-1", "Cessna 172", 52.2805, 20.9201, 1800, -0.00002,  0.00001},
+    {"AT3-7",  "AT3",        52.2750, 20.8950,  900,  0.00000, -0.00002}
+};
+
+#define FLEET_SIZE (sizeof(fleet)/sizeof(fleet[0]))
+
+// ===== SIMPLE DRIFT SIMULATION =====
+static void update_fleet()
+{
+    for (int i = 0; i < FLEET_SIZE; i++) {
+        fleet[i].lat += fleet[i].dy;
+        fleet[i].lon += fleet[i].dx;
+
+        // minimal random wobble
+        fleet[i].dx += ((float)(rand() % 100) - 50) * 0.00000001f;
+        fleet[i].dy += ((float)(rand() % 100) - 50) * 0.00000001f;
+    }
+
+    // own ship small drift simulation (optional)
+    own_lat += 0.000001f;
+    own_lon += 0.000001f;
+}
+
+// ===== RADAR HANDLER =====
 static esp_err_t radar_get_handler(httpd_req_t *req)
 {
-    char *resp_str = malloc(1024);
+    update_fleet();
 
+    char *resp_str = malloc(2048);
     if (!resp_str) {
         httpd_resp_send_500(req);
         return ESP_FAIL;
     }
 
-    snprintf(resp_str, 1024,
+    int offset = 0;
+
+    // ===== OWN AIRCRAFT =====
+    offset += snprintf(resp_str + offset, 2048 - offset,
     "{"
-      "\"aircraft\":["
+      "\"own\":{"
+        "\"lat\":%.6f,"
+        "\"lon\":%.6f,"
+        "\"alt\":%.0f,"
+        "\"heading\":%.1f"
+      "},"
+      "\"aircraft\":[",
+      own_lat,
+      own_lon,
+      own_alt,
+      own_heading
+    );
+
+    // ===== FLEET =====
+    for (int i = 0; i < FLEET_SIZE; i++) {
+
+        // safety: prevent overflow
+        if (offset > 1900) break;
+
+        offset += snprintf(resp_str + offset, 2048 - offset,
         "{"
-          "\"id\":\"GLD1\","
-          "\"type\":\"Glider\","
-          "\"lat\":52.2690,"
-          "\"lon\":20.9070,"
-          "\"alt\":1200"
-        "},"
-        "{"
-          "\"id\":\"C172-1\","
-          "\"type\":\"Cessna 172\","
-          "\"lat\":52.2805,"
-          "\"lon\":20.9201,"
-          "\"alt\":1800"
-        "},"
-        "{"
-          "\"id\":\"AT3-7\","
-          "\"type\":\"AT3\","
-          "\"lat\":52.2750,"
-          "\"lon\":20.8950,"
-          "\"alt\":900"
-        "}"
-      "]"
-    "}");
+          "\"id\":\"%s\","
+          "\"type\":\"%s\","
+          "\"lat\":%.6f,"
+          "\"lon\":%.6f\","
+          "\"alt\":%.0f"
+        "}%s",
+        fleet[i].id,
+        fleet[i].type,
+        fleet[i].lat,
+        fleet[i].lon,
+        fleet[i].alt,
+        (i < FLEET_SIZE - 1) ? "," : ""
+        );
+    }
+
+    // close JSON
+    snprintf(resp_str + offset, 2048 - offset, "] }");
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
 
     free(resp_str);
-
     return ESP_OK;
 }

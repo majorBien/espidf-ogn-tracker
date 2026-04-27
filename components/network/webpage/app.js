@@ -347,3 +347,221 @@ async function loadLogBook() {
     container.innerHTML = "Error loading logbook";
   }
 }
+
+let radarData = [];
+let radarCache = [];
+
+let radarInterval = null;
+let radarInitialized = false;
+
+const RADAR_REFRESH_MS = 3000;
+const CACHE_TTL_MS = 10000;
+
+// FIXED CENTER = OWN POSITION (from backend)
+let radarCenter = {
+  lat: 52.0,
+  lon: 21.0
+};
+
+// =========================
+// INIT RADAR
+// =========================
+function initRadar() {
+  if (radarInitialized) return;
+  radarInitialized = true;
+
+  const container = document.getElementById("radar_display");
+  if (!container) return;
+
+  container.innerHTML = "";
+
+  container.style.position = "relative";
+  container.style.width = "100%";
+  container.style.height = "500px";
+  container.style.border = "2px solid #00ff99";
+  container.style.borderRadius = "12px";
+  container.style.overflow = "hidden";
+  container.style.background = "radial-gradient(circle, #001a12 0%, #000 100%)";
+
+  drawRadarGrid(container);
+
+  loadRadarData();
+  radarInterval = setInterval(loadRadarData, RADAR_REFRESH_MS);
+}
+
+// =========================
+// GRID
+// =========================
+function drawRadarGrid(container) {
+  const canvas = document.createElement("canvas");
+  const ctx = canvas.getContext("2d");
+
+  container.appendChild(canvas);
+
+  function resize() {
+    canvas.width = container.clientWidth;
+    canvas.height = container.clientHeight;
+  }
+
+  resize();
+  window.addEventListener("resize", resize);
+
+  function draw() {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    const cx = canvas.width / 2;
+    const cy = canvas.height / 2;
+
+    ctx.strokeStyle = "rgba(0,255,153,0.15)";
+    ctx.lineWidth = 1;
+
+    for (let r = 50; r < 250; r += 50) {
+      ctx.beginPath();
+      ctx.arc(cx, cy, r, 0, Math.PI * 2);
+      ctx.stroke();
+    }
+
+    ctx.beginPath();
+    ctx.moveTo(cx, 0);
+    ctx.lineTo(cx, canvas.height);
+    ctx.moveTo(0, cy);
+    ctx.lineTo(canvas.width, cy);
+    ctx.stroke();
+
+    requestAnimationFrame(draw);
+  }
+
+  draw();
+}
+
+// =========================
+// RENDER RADAR
+// =========================
+function renderRadar(container, data) {
+  container.querySelectorAll(".blip").forEach(e => e.remove());
+
+  const cx = container.clientWidth / 2;
+  const cy = container.clientHeight / 2;
+
+  if (!data) return;
+
+  const own = data.own || { lat: 52.2730, lon: 20.9100 };
+
+  const aircraft = data.aircraft || [];
+
+  const SCALE = 15000;
+
+  // ===== OWN (ZAWSZE RYSUJ) =====
+  const me = document.createElement("div");
+  me.className = "blip";
+
+  me.style.cssText = `
+    position:absolute;
+    left:${cx}px;
+    top:${cy}px;
+    width:16px;
+    height:16px;
+    border-radius:50%;
+    background:#ffcc00;
+    box-shadow:0 0 15px #ffcc00;
+    transform: translate(-50%, -50%);
+  `;
+
+  me.title = "YOU";
+  container.appendChild(me);
+
+  // ===== AIRCRAFT =====
+  aircraft.forEach(ac => {
+    if (ac.lat == null || ac.lon == null) return;
+
+    const dx = ac.lon - own.lon;
+    const dy = ac.lat - own.lat;
+
+    const x = cx + dx * SCALE;
+    const y = cy - dy * SCALE;
+
+    const el = document.createElement("div");
+    el.className = "blip";
+
+    const color = "#00aaff";
+
+    el.style.cssText = `
+      position:absolute;
+      left:${x}px;
+      top:${y}px;
+      width:10px;
+      height:10px;
+      border-radius:50%;
+      background:${color};
+      box-shadow:0 0 10px ${color};
+      transform: translate(-50%, -50%);
+    `;
+
+    el.title = ac.id || "UNKNOWN";
+
+    container.appendChild(el);
+  });
+}
+
+// =========================
+// DATA LOADER
+// =========================
+async function loadRadarData() {
+  const container = document.getElementById("radar_display");
+  if (!container) return;
+
+  try {
+    let data;
+
+    const res = await fetch(`${API_URL}/api/radar`);
+    if (!res.ok) return;
+
+    data = await res.json();
+
+    radarCache = {
+      time: Date.now(),
+      data
+    };
+
+    localStorage.setItem("radar_cache", JSON.stringify(radarCache));
+
+    renderRadar(container, data);
+
+  } catch (e) {
+    console.error("Radar error", e);
+
+    const cached = localStorage.getItem("radar_cache");
+    if (!cached) return;
+
+    const parsed = JSON.parse(cached);
+    renderRadar(container, parsed.data);
+  }
+}
+
+// =========================
+// RESIZE SAFE RESET
+// =========================
+window.addEventListener("resize", () => {
+  const container = document.getElementById("radar_display");
+  if (!container) return;
+
+  radarInitialized = false;
+
+  if (radarInterval) {
+    clearInterval(radarInterval);
+    radarInterval = null;
+  }
+
+  initRadar();
+});
+
+// =========================
+// START
+// =========================
+window.addEventListener("DOMContentLoaded", () => {
+  initRadar();
+
+  if (typeof discoverStaApiUrl === "function") {
+    discoverStaApiUrl();
+  }
+});
