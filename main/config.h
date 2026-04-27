@@ -4,19 +4,6 @@
 #define DEFAULT_PPSdelay      100
 #define DEFAULT_FreqPlan        0
 
-#define WIFI_ADDRESS_IP1        192      // 192.168.1.1 for IP Address
-#define WIFI_ADDRESS_IP2        168
-#define WIFI_ADDRESS_IP3        1
-#define WIFI_ADDRESS_IP4        1
-#define WIFI_ADDRESS_GW1        0       // 0.0.0.0 for Gateway
-#define WIFI_ADDRESS_GW2        0
-#define WIFI_ADDRESS_GW3        0
-#define WIFI_ADDRESS_GW4        0
-#define WIFI_ADDRESS_MK1        255     // 255.255.255.0 for Mask
-#define WIFI_ADDRESS_MK2        255
-#define WIFI_ADDRESS_MK3        255
-#define WIFI_ADDRESS_MK4        0
-
 // #define WITH_HELTEC                        // HELTEC module: PCB LED on GPI025
 // #define WITH_TTGO                          // TTGO module: PCB LED on GPIO2, GPIO25 free to use as DAC2 output
 //#define WITH_TBEAM                          // T-Beam module
@@ -81,7 +68,7 @@
 
 //#define WITH_BT_SPP                        // Bluetooth serial port for smartphone/tablet link
 // #define WITH_WIFI                          // attempt to connect to the wifi router for uploading the log files
-// #define WITH_SPIFFS_LOG                    // log transmitted and received packets to SPIFFS
+#define WITH_SPIFFS_LOG                    // log transmitted and received packets to SPIFFS
 
 #define WITH_ENCRYPT                       // Encrypt (optionally) the position
 

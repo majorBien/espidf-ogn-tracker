@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Ankior Smart Apteczka Basic</title>
+  <link rel="stylesheet" href="app.css">
+</head>
+<body>
+  <header>
+    <h1>Panel sterowania</h1>
+    <nav class="tabs">
+      <button class="tab-btn" data-tab="ota">📦 OTA</button>
+      <button class="tab-btn" data-tab="network">📶 Sieć</button>
+    </nav>
+  </header>
+
+  <main>
+
+    <!-- OTA UPDATE -->
+    <section id="ota" class="tab">
+      <h2>Aktualizacja OTA</h2>
+      <div class="ota-section">
+        <input type="file" id="selected_file">
+        <button id="btnUpdate">Aktualizuj oprogramowanie</button>
+		<br>
+		<progress id="ota_progress" value="0" max="100" style="width: 100%; display:none;"></progress>
+        <div id="file_info"></div>
+        <div id="ota_update_status"></div>
+      </div>
+    </section>
+
+    <!-- NETWORK CONFIG -->
+    <section id="network" class="tab">
+      <h2>Konfiguracja Wi-Fi</h2>
+      <div class="network-section">
+        <button id="btnGetNetwork">📥 Pobierz konfigurację</button>
+        <div id="network_status"></div>
+
+        <label for="ssid">SSID:</label>
+        <input type="text" id="ssid" placeholder="Nazwa sieci Wi-Fi">
+
+        <label for="password">Hasło:</label>
+        <input type="password" id="password" placeholder="Hasło Wi-Fi">
+
+        <button id="btnSaveNetwork">💾 Zapisz konfigurację</button>
+      </div>
+    </section>
+  </main>
+
+  <script src="app.js" type="module"></script>
+</body>
+</html>

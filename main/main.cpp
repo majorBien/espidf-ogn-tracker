@@ -16,6 +16,10 @@
 #include "sound.h"                // sounds, warnings, alarms
 #include "disp.h"
 
+extern "C" {
+#include "wifi_app.h"
+}
+
 #ifdef WITH_SDLOG
 #include "sdlog.h"
 #endif
@@ -43,6 +47,8 @@
 extern "C"
 void app_main(void)
 {
+
+                  // start the WiFi application task
     // printf("OGN Tracker on ESP32\n");
 
     CONS_UART_Init();
@@ -99,7 +105,7 @@ void app_main(void)
 #endif
 
     CONS_UART_SetBaudrate(Parameters.CONbaud);
-
+	wifi_app_start();  
 #ifdef WITH_LORAWAN
 #ifdef DEBUG_PRINT
     xSemaphoreTake(CONS_Mutex, portMAX_DELAY);
@@ -220,5 +226,6 @@ void app_main(void)
 
     // while(1)
     // { vTaskDelay(10000); }
+   
 }
 
