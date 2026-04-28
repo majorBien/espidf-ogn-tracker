@@ -280,6 +280,49 @@ window.addEventListener("DOMContentLoaded", () => {
     defaultTab.classList.add("active");
     defaultSection.classList.add("active");
   }
+  // ===== IDENTITY SAVE =====
+    const btnSaveIdentity = document.getElementById("btnSaveIdentity");
+    const identityStatus = document.getElementById("identity_status");
+
+    if (btnSaveIdentity) {
+      btnSaveIdentity.addEventListener("click", async () => {
+        const payload = {
+          pilot: document.getElementById("pilot").value,
+          crew: document.getElementById("crew").value,
+          reg: document.getElementById("reg").value,
+          base: document.getElementById("base").value,
+          manuf: document.getElementById("manuf").value,
+          model: document.getElementById("model").value,
+          type: document.getElementById("type").value,
+          sn: document.getElementById("sn").value
+        };
+
+        try {
+          const res = await fetch(`${API_URL}/api/config/identity`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify(payload)
+          });
+
+          if (res.ok) {
+            identityStatus.textContent = "Saved successfully ✅";
+            identityStatus.style.color = "#0f0";
+            loadIdentity(); // reload displayed data
+          } else {
+            identityStatus.textContent = "Save error ❌";
+            identityStatus.style.color = "#f00";
+          }
+        } catch (e) {
+          console.error("Identity save failed", e);
+          identityStatus.textContent = "Save error ❌";
+          identityStatus.style.color = "#f00";
+        }
+
+        setTimeout(() => {
+          if (identityStatus) identityStatus.textContent = "";
+        }, 3000);
+      });
+    }
 });
 
 async function loadIdentity() {

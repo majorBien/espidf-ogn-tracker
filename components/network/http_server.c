@@ -492,7 +492,7 @@ static httpd_handle_t http_server_configure(void)
    				 .handler = settings_identity_post_handler,
    				 .user_ctx = NULL
    		};
-   		
+   		//httpd_register_uri_handler(http_server_handle, &identity_post);
    		
    		httpd_uri_t log_book_get = {
 				 .uri = "/api/logbook",
@@ -658,20 +658,28 @@ static esp_err_t settings_ip_get_handler(httpd_req_t *req){
 
 static esp_err_t settings_identity_get_handler(httpd_req_t *req)
 {
-    char resp_str[384] = {0};
+    char resp_str[512];
 
-	snprintf(resp_str, 2048,
-	"{"
-	  "\"pilot\":\"Wiktor\","
-	  "\"crew\":\"\","
-	  "\"reg\":\"SP-3321\","
-	  "\"base\":\"Aeroklub Warszawski - Babice\","
-	  "\"manuf\":\"Schempp-Hirth\","
-	  "\"model\":\"Discus 2\","
-	  "\"type\":\"Glider\","
-	  "\"sn\":\"DH-18-2045\""
-	"}"
-	);
+    snprintf(resp_str, sizeof(resp_str),
+    "{"
+      "\"pilot\":\"%s\","
+      "\"crew\":\"%s\","
+      "\"reg\":\"%s\","
+      "\"base\":\"%s\","
+      "\"manuf\":\"%s\","
+      "\"model\":\"%s\","
+      "\"type\":\"%s\","
+      "\"sn\":\"%s\""
+    "}",
+    params_get_pilot(),
+    params_get_crew(),
+    params_get_reg(),
+    params_get_base(),
+    params_get_manuf(),
+    params_get_model(),
+    params_get_type(),
+    params_get_sn()
+    );
 
     httpd_resp_set_type(req, "application/json");
     httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
@@ -681,30 +689,60 @@ static esp_err_t settings_identity_get_handler(httpd_req_t *req)
 
 static esp_err_t settings_identity_post_handler(httpd_req_t *req)
 {
-	char buf[512] = { 0 };
-	int ret, total_length = 0;
-	
-   // Receive full request body
-	do {
-		ret = httpd_req_recv(req, buf + total_length, sizeof(buf) - total_length - 1);
-		if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
-			ESP_LOGI(TAG, "timeout, continue receiving");
-			continue;
-		}
-		if (ret < 0) {
-			ESP_LOGE(TAG, "Error receiving data! (status = %d)", ret);
-			return ESP_FAIL;
-		}
-		total_length += ret;
-		buf[total_length] = '\0';
-	} while (ret >= sizeof(buf) - total_length);
+    char buffer[512];
+    int ret = httpd_req_recv(req, buffer, sizeof(buffer) - 1);
+    if (ret <= 0) {
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
+    buffer[ret] = '\0';
 
-	ESP_LOGI(TAG, "Received JSON: %s", buf);
+    // Parse JSON - using cJSON
+    cJSON *json = cJSON_Parse(buffer);
+    if (json == NULL) {
+        httpd_resp_send_err(req, HTTPD_400_BAD_REQUEST, "Invalid JSON");
+        return ESP_FAIL;
+    }
 
-	// Here you would parse the JSON and save the identity information as needed
+    // Extract and set string parameters
+    cJSON *item = NULL;
+    
+    item = cJSON_GetObjectItem(json, "pilot");
+    if (item && cJSON_IsString(item)) params_set_pilot(item->valuestring);
+    
+    item = cJSON_GetObjectItem(json, "crew");
+    if (item && cJSON_IsString(item)) params_set_crew(item->valuestring);
+    
+    item = cJSON_GetObjectItem(json, "reg");
+    if (item && cJSON_IsString(item)) params_set_reg(item->valuestring);
+    
+    item = cJSON_GetObjectItem(json, "base");
+    if (item && cJSON_IsString(item)) params_set_base(item->valuestring);
+    
+    item = cJSON_GetObjectItem(json, "manuf");
+    if (item && cJSON_IsString(item)) params_set_manuf(item->valuestring);
+    
+    item = cJSON_GetObjectItem(json, "model");
+    if (item && cJSON_IsString(item)) params_set_model(item->valuestring);
+    
+    item = cJSON_GetObjectItem(json, "type");
+    if (item && cJSON_IsString(item)) params_set_type(item->valuestring);
+    
+    item = cJSON_GetObjectItem(json, "sn");
+    if (item && cJSON_IsString(item)) params_set_sn(item->valuestring);
 
-	httpd_resp_sendstr(req, "Identity updated");
-	return ESP_OK;
+    // Save to flash (persistent storage)
+    if (params_save_to_flash()) {
+        cJSON_Delete(json);
+        httpd_resp_set_type(req, "application/json");
+        httpd_resp_send(req, "{\"status\":\"ok\",\"message\":\"Parameters saved successfully\"}", 
+                        HTTPD_RESP_USE_STRLEN);
+        return ESP_OK;
+    } else {
+        cJSON_Delete(json);
+        httpd_resp_send_500(req);
+        return ESP_FAIL;
+    }
 }
 
 static esp_err_t log_book_get_handler(httpd_req_t *req)
