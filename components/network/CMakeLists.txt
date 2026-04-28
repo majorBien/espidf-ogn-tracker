@@ -18,4 +18,5 @@ idf_component_register(
     	esp_timer
     	app_update
     	esp_https_ota
+    	wrappers
 )

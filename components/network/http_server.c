@@ -22,6 +22,7 @@
 #include "esp_ota_ops.h" 
 #include "esp_partition.h" 
 #include <math.h>
+#include "parameters_wrapper.h"
 nvs_network_data_t network_data;
 
 // Firmware update status
@@ -485,13 +486,13 @@ static httpd_handle_t http_server_configure(void)
    		};
    		httpd_register_uri_handler(http_server_handle, &identity_get);
    		
-		/*   	  httpd_uri_t identity_post = {
+			httpd_uri_t identity_post = {
 				 .uri = "/api/config/identity",
    				 .method = HTTP_POST,
    				 .handler = settings_identity_post_handler,
    				 .user_ctx = NULL
    		};
-   		*/
+   		
    		
    		httpd_uri_t log_book_get = {
 				 .uri = "/api/logbook",
@@ -676,6 +677,34 @@ static esp_err_t settings_identity_get_handler(httpd_req_t *req)
     httpd_resp_send(req, resp_str, HTTPD_RESP_USE_STRLEN);
 
     return ESP_OK;
+}
+
+static esp_err_t settings_identity_post_handler(httpd_req_t *req)
+{
+	char buf[512] = { 0 };
+	int ret, total_length = 0;
+	
+   // Receive full request body
+	do {
+		ret = httpd_req_recv(req, buf + total_length, sizeof(buf) - total_length - 1);
+		if (ret == HTTPD_SOCK_ERR_TIMEOUT) {
+			ESP_LOGI(TAG, "timeout, continue receiving");
+			continue;
+		}
+		if (ret < 0) {
+			ESP_LOGE(TAG, "Error receiving data! (status = %d)", ret);
+			return ESP_FAIL;
+		}
+		total_length += ret;
+		buf[total_length] = '\0';
+	} while (ret >= sizeof(buf) - total_length);
+
+	ESP_LOGI(TAG, "Received JSON: %s", buf);
+
+	// Here you would parse the JSON and save the identity information as needed
+
+	httpd_resp_sendstr(req, "Identity updated");
+	return ESP_OK;
 }
 
 static esp_err_t log_book_get_handler(httpd_req_t *req)
