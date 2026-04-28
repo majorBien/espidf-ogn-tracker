@@ -375,7 +375,7 @@ static httpd_handle_t http_server_configure(void)
 	config.stack_size = HTTP_SERVER_TASK_STACK_SIZE;
 
 	// Increase uri handlers
-	config.max_uri_handlers = 20;
+	config.max_uri_handlers = 25;
 
 	// Increase the timeout limits
 	config.recv_wait_timeout = 10;
@@ -492,7 +492,7 @@ static httpd_handle_t http_server_configure(void)
    				 .handler = settings_identity_post_handler,
    				 .user_ctx = NULL
    		};
-   		//httpd_register_uri_handler(http_server_handle, &identity_post);
+   		httpd_register_uri_handler(http_server_handle, &identity_post);
    		
    		httpd_uri_t log_book_get = {
 				 .uri = "/api/logbook",

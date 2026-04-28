@@ -19,7 +19,6 @@ idf_component_register(SRCS "main.cpp"
 							"sens.cpp"
 							"st7789.cpp"
 							"timesync.cpp"
-							"parameters_wrapper.cpp"
 						EMBED_FILES "OGN_logo_240x240.jpg"
                        INCLUDE_DIRS "."		
 					   INCLUDE_DIRS "../components")
