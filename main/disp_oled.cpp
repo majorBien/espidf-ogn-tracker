@@ -816,10 +816,10 @@ void OLED_DrawID(u8g2_t *OLED, GPS_Position *GPS)
   // u8g2_SetFont(OLED, u8g2_font_10x20_tr);
   u8g2_SetFont(OLED, u8g2_font_7x13_tf);
   u8g2_DrawStr(OLED, 0, 24, "ID:");
-  if(Parameters.Pilot[0] || Parameters.Reg[0])
+  if(Parameters.Pilot[0] || Parameters.Crew[0])
   { strcpy(Line, "Pilot: "); strcat(Line, Parameters.Pilot);
     u8g2_DrawStr(OLED, 0, 37, Line);
-    strcpy(Line, "Reg: "); strcat(Line, Parameters.Reg);
+    strcpy(Line, "Crew: "); strcat(Line, Parameters.Crew);
     u8g2_DrawStr(OLED, 0, 49, Line); }
   else
   {
@@ -840,6 +840,48 @@ void OLED_DrawID(u8g2_t *OLED, GPS_Position *GPS)
   Len+=Format_String(Line+Len, " v"STR(VERSION));
   Line[Len]=0;
   u8g2_DrawStr(OLED, 0, 62, Line); }
+  
+  
+void OLED_DrawPlaneInfo(u8g2_t *OLED, GPS_Position *GPS)
+{
+  char Line[64];
+
+  u8g2_SetFont(OLED, u8g2_font_7x13_tf);
+
+  // REG
+  if (Parameters.Reg[0])
+  {
+    strcpy(Line, "Reg: ");
+    strcat(Line, Parameters.Reg);
+    u8g2_DrawStr(OLED, 0, 25, Line);
+  }
+
+  // BASE
+  if (Parameters.Base[0])
+  {
+    strcpy(Line, "Base: ");
+    strcat(Line, Parameters.Base);
+    u8g2_DrawStr(OLED, 0, 37, Line);
+  }
+
+  // MODEL
+  if (Parameters.Model[0])
+  {
+    strcpy(Line, "Model: ");
+    strcat(Line, Parameters.Model);
+    u8g2_DrawStr(OLED, 0, 49, Line);
+  }
+
+  // TYPE
+  if (Parameters.Reg[0])
+  {
+    strcpy(Line, "Type: ");
+    strcat(Line, Parameters.Type);
+    u8g2_DrawStr(OLED, 0, 61, Line);
+  }
+  
+}
+
 
 void OLED_DrawAltitudeAndSpeed(u8g2_t *OLED, GPS_Position *GPS)
 { uint8_t Len;
